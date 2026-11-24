@@ -154,7 +154,7 @@ def open_rows(check):
                     closed += 1
                     continue
         rows.append({**judge, "end": end, "career_text": career(post),
-                     "posted": post.get("posted") or post.get("first_seen") or "-",
+                     "posted": post.get("posted") or post.get("first_seen") or "-", "first_seen": post.get("first_seen") or "-",
                      "company_key": judge.get("company_key") or post.get("company_key") or judge["company"]})
     CHECKS.write_text(json.dumps(checks, ensure_ascii=False, indent=1))
     return rows, expired, closed, too_senior
