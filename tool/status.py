@@ -24,7 +24,7 @@ REPORTS = Path("/opt/jobfeed/notes/기업")
 POSTINGS = DATA / "postings.json"  # posting.py 가 남기는 공고 url → 공고 보고서 파일
 POSTING_NOTES = Path("/opt/jobfeed/notes/공고")
 CHECKS = DATA / "status-checks.json"  # 상시 채용 공고가 열려 있는지 마지막으로 본 날과 결과
-MAX_CAREER_MIN = 2  # collect.py 와 같은 기준. 11-24 전에 판정된 공고에는 「3년 이상」이 섞여 있어 여기서도 뺀다
+MAX_CAREER_MIN = 1  # collect.py 와 같은 기준. 기준이 바뀌기 전에 판정된 공고(「2년 이상」 · 「3년 이상」)가 섞여 있어 여기서도 뺀다
 RED_DAYS = 7
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
 TODAY = date.today()
@@ -128,7 +128,7 @@ def table(head, rows):
 
 
 def open_rows(check):
-    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 3년 이상). share.py 도 이걸 쓴다."""
+    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 2년 이상). share.py 도 이걸 쓴다."""
     posts, kept = postings(), judged()
     checks = load(CHECKS, {})
     rows, expired, closed, too_senior = [], 0, 0, 0
@@ -204,7 +204,7 @@ def main():
     lines = ["---", "tags: [취업]", f'date: "{TODAY.isoformat()}"', "---", "",
              f"- 갱신: {now:%Y-%m-%d %H:%M}",
              f"- 접수 중: {len(rows)}건 (특기 {len(special)} · 나머지 {len(rest)} · 상시 채용 {len(always)})",
-             f"- 이번에 뺀 공고: 마감 지남 {expired} · 상시 채용 종료 {closed} · 요구 경력 3년 이상 {too_senior}",
+             f"- 이번에 뺀 공고: 마감 지남 {expired} · 상시 채용 종료 {closed} · 요구 경력 2년 이상 {too_senior}",
              "- 오늘 새로 뜬 공고만 보려면 [[취업최전선/오늘의 공고|오늘의 공고]]", ""]
     lines += ["## 특기", ""]
     lines += table(["회사", "제목", "요구 경력", "마감", "올라온 날", "특기 이유", "회사 평가", "회사 조사", "공고 보고서", "링크"], special_rows) if special_rows else ["없음"]
@@ -215,7 +215,7 @@ def main():
     lines += table(["회사", "특기", "카테고리", "직무", "제목", "요구 경력", "올라온 날", "회사 평가", "회사 조사", "공고 보고서", "링크"], always_rows) if always_rows else ["없음"]
     NOTE.write_text("\n".join(lines) + "\n")
     print(f"공고 현황: 접수 중 {len(rows)}(특기 {len(special)} · 나머지 {len(rest)} · 상시 {len(always)}) · "
-          f"뺌: 마감 {expired} · 상시 종료 {closed} · 3년 이상 {too_senior} → {NOTE}")
+          f"뺌: 마감 {expired} · 상시 종료 {closed} · 2년 이상 {too_senior} → {NOTE}")
     return 0
 
 

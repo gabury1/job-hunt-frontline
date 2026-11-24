@@ -36,7 +36,7 @@ CLAUDE = "claude"
 MODEL = "opus"  # 배치는 오푸스
 WORKERS = 16
 TIMEOUT = 15 * 60
-MAX_CAREER_MIN = 2  # collect.py · status.py 와 같은 기준. 11-24 전 판정분에 섞인 「3년 이상」은 만들지 않는다
+MAX_CAREER_MIN = 1  # collect.py · status.py 와 같은 기준. 기준이 바뀌기 전 판정분에 섞인 「2년 이상」은 만들지 않는다
 REQUIRED_KEYS = ("company", "마감", "정리")
 REQUIRED_HEADINGS = ("## 일정과 전형", "## 담당할 업무", "## 지원 자격", "## 제출 서류와 지원 방법", "## 메모")
 
@@ -166,7 +166,7 @@ def link_today_note(index):
             cells[col] = f"[[취업최전선/공고/{done['file']}\\|공고 보고서]]"
             linked += 1
         elif m and (((posts.get(m.group(1)) or {}).get("career") or [0])[0] or 0) > MAX_CAREER_MIN:
-            cells[col] = "안 만듦 (3년 이상)"
+            cells[col] = "안 만듦 (2년 이상)"
         else:
             cells[col] = "만드는 중"
         lines[i] = "| " + " | ".join(cells) + " |"

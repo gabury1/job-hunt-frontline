@@ -18,7 +18,7 @@ UA = "Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Ch
 DATA = Path("/opt/jobfeed/store/data")
 SEEN = DATA / "seen.json"
 NOW = datetime.now()
-MAX_CAREER_MIN = 2  # 요구 경력 하한 2년까지. 「3년 이상」은 빼고 「3년 이하」(상한형, 하한 0~1)는 남긴다
+MAX_CAREER_MIN = 1  # 요구 경력 하한 1년까지. 「2년 이상」부터 뺀다. 「3년 이하」 같은 상한형(하한 0~1)은 남긴다
 FIRST_RUN_LOOKBACK = timedelta(days=1)
 # --backfill: 기간 제한 없이 지금 접수 중인 공고를 모은다. 첫 실행이 하루치만 봐서 그 전에 올라온 공고가 빠졌다(11-24).
 # 「공고 현황」에만 들어갈 공고라 아침 보고와 따로 돌린다
