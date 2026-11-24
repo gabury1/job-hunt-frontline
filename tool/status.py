@@ -19,6 +19,8 @@ from pathlib import Path
 import yaml
 
 DATA = Path("/opt/jobfeed/store/data")
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I 로 돌면 스크립트 폴더가 경로에 없다
+import origins  # noqa: E402
 NOTE = Path("/opt/jobfeed/notes/공고 현황.md")
 REPORTS = Path("/opt/jobfeed/notes/기업")
 POSTINGS = DATA / "postings.json"  # posting.py 가 남기는 공고 url → 공고 보고서 파일
@@ -59,6 +61,9 @@ def still_open(post):
         if site == "직행":
             data = fetch(f"https://api.zighang.com/api/recruitments/{pid}").get("data")
             return bool(data) and data.get("status") == "ACTIVE"
+        if site == "원티드":
+            job = fetch(f"https://www.wanted.co.kr/api/v4/jobs/{pid}").get("job")
+            return bool(job) and job.get("status") == "active"
         if site == "점핏":
             result = fetch(f"https://jumpit-api.saramin.co.kr/api/position/{pid}").get("result")
             if not result or result.get("invisible"):
@@ -128,7 +133,7 @@ def table(head, rows):
 
 
 def open_rows(check):
-    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 2년 이상). share.py 도 이걸 쓴다."""
+    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 2년 이상 · 다른 사이트 중복). share.py 도 이걸 쓴다."""
     posts, kept = postings(), judged()
     checks = load(CHECKS, {})
     rows, expired, closed, too_senior = [], 0, 0, 0
@@ -157,13 +162,25 @@ def open_rows(check):
                      "posted": post.get("posted") or post.get("first_seen") or "-", "first_seen": post.get("first_seen") or "-",
                      "company_key": judge.get("company_key") or post.get("company_key") or judge["company"]})
     CHECKS.write_text(json.dumps(checks, ensure_ascii=False, indent=1))
-    return rows, expired, closed, too_senior
+    # 원래 공고 주소가 같으면 사이트가 달라도 한 공고다(origins.py). 공고 노트가 있는 줄, 그다음 먼저 본 줄을 남긴다
+    origin_of = load(DATA / "origins.json", {})
+    notes = load(POSTINGS, {})
+    taken, unique = set(), []
+    for r in sorted(rows, key=lambda r: (r["url"] not in notes, r.get("first_seen") or "9")):
+        found = origins.keys(origin_of.get(r["url"]), r["company_key"]) or {r["url"]}
+        if found & taken:
+            continue
+        taken |= found
+        unique.append(r)
+    dups = len(rows) - len(unique)
+    rows = unique
+    return rows, expired, closed, too_senior, dups
 
 
 def main():
     check = "--no-check" not in sys.argv
     reports = load(POSTINGS, {})
-    rows, expired, closed, too_senior = open_rows(check)
+    rows, expired, closed, too_senior, dups = open_rows(check)
 
     dated = sorted((r for r in rows if r["end"] != "상시"), key=lambda r: (r["end"], r["company_key"]))
     always = sorted((r for r in rows if r["end"] == "상시"), key=lambda r: r["posted"], reverse=True)  # 최근에 올라온 것부터
@@ -204,7 +221,7 @@ def main():
     lines = ["---", "tags: [취업]", f'date: "{TODAY.isoformat()}"', "---", "",
              f"- 갱신: {now:%Y-%m-%d %H:%M}",
              f"- 접수 중: {len(rows)}건 (특기 {len(special)} · 나머지 {len(rest)} · 상시 채용 {len(always)})",
-             f"- 이번에 뺀 공고: 마감 지남 {expired} · 상시 채용 종료 {closed} · 요구 경력 2년 이상 {too_senior}",
+             f"- 이번에 뺀 공고: 마감 지남 {expired} · 상시 채용 종료 {closed} · 요구 경력 2년 이상 {too_senior} · 다른 사이트에 같은 공고 {dups}",
              "- 오늘 새로 뜬 공고만 보려면 [[취업최전선/오늘의 공고|오늘의 공고]]", ""]
     lines += ["## 특기", ""]
     lines += table(["회사", "제목", "요구 경력", "마감", "올라온 날", "특기 이유", "회사 평가", "회사 조사", "공고 보고서", "링크"], special_rows) if special_rows else ["없음"]
@@ -215,7 +232,7 @@ def main():
     lines += table(["회사", "특기", "카테고리", "직무", "제목", "요구 경력", "올라온 날", "회사 평가", "회사 조사", "공고 보고서", "링크"], always_rows) if always_rows else ["없음"]
     NOTE.write_text("\n".join(lines) + "\n")
     print(f"공고 현황: 접수 중 {len(rows)}(특기 {len(special)} · 나머지 {len(rest)} · 상시 {len(always)}) · "
-          f"뺌: 마감 {expired} · 상시 종료 {closed} · 2년 이상 {too_senior} → {NOTE}")
+          f"뺌: 마감 {expired} · 상시 종료 {closed} · 2년 이상 {too_senior} · 중복 {dups} → {NOTE}")
     return 0
 
 

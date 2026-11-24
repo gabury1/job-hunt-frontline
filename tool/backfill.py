@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 DATA = Path("/opt/jobfeed/store/data")
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I 로 돌면 스크립트 폴더가 경로에 없다
+import origins  # noqa: E402
 STAGE = DATA / "backfill"
 REPORTS = Path("/opt/jobfeed/notes/기업")
 GUIDE = Path("/opt/jobfeed/notes/취업 준비 지도.md")
@@ -51,15 +53,27 @@ PROMPT = """너는 취업 준비생가 지원할 공고를 고르는 판정을 �
 
 def prepare(day, size):
     data = json.loads((DATA / "candidates" / f"{day}.json").read_text())
-    items = [i for i in data["items"] if i.get("backfill")]
+    # 이미 판정한 공고는 다시 판정하지 않는다(원티드를 나중에 붙여 메우기를 두 번 했다). 묶음 번호도 이어서 매긴다
+    done = {j["url"] for path in (STAGE / "stage" / "judge").glob("*.json") for j in json.loads(path.read_text())["items"]}
+    items = [i for i in data["items"] if i.get("backfill") and i["url"] not in done]
+    # 원래 공고 주소가 이미 판정 · 판정 기록에 있는 공고와 같으면 판정하지 않는다(origins.py fill 을 먼저 돌린다)
+    origin_of = json.loads((DATA / "origins.json").read_text()) if (DATA / "origins.json").exists() else {}
+    kept_urls = {i["url"] for p in (DATA / "kept").glob("*.json") for i in json.loads(p.read_text())["items"]}
+    posts = origins.postings()
+    company = lambda u: (posts.get(u) or {}).get("company_key", "")
+    taken = set().union(*(origins.keys(origin_of.get(u), company(u)) for u in done | kept_urls))
+    before = len(items)
+    items = [i for i in items if not (origins.keys(origin_of.get(i["url"]), i["company_key"]) & taken)]
+    print(f"원래 주소가 같아 뺀 공고: {before - len(items)}", file=sys.stderr)
     chunks = STAGE / "judge-in"
+    first = len(list(chunks.glob("chunk-*.json"))) if chunks.exists() else 0
     chunks.mkdir(parents=True, exist_ok=True)
     (STAGE / "stage" / "judge").mkdir(parents=True, exist_ok=True)
     (STAGE / "prompts").mkdir(parents=True, exist_ok=True)
     keys = ("url", "site", "company", "company_key", "title", "career", "end", "regions", "categories", "body")
     names = []
     for n in range(0, len(items), size):
-        name = f"chunk-{n // size:03d}"
+        name = f"chunk-{first + n // size:03d}"
         chunk = chunks / f"{name}.json"
         chunk.write_text(json.dumps([{k: (i.get(k) or "")[:2000] if k == "body" else i.get(k) for k in keys} for i in items[n:n + size]],
                                     ensure_ascii=False, indent=1))

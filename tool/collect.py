@@ -1,4 +1,4 @@
-"""직행 · 점핏 · 자소설닷컴에서 새로 올라온 공고를 모아 store/jobfeed/data/new/<날짜>.json 에 쓴다.
+"""직행 · 점핏 · 자소설닷컴 · 원티드에서 새로 올라온 공고를 모아 store/jobfeed/data/new/<날짜>.json 에 쓴다.
 
 판정(지원 · 특기)은 하지 않는다. 사람이 정한 범위로 거르고, 이미 본 공고는 뺀다.
 판정과 보고는 판정 봇 예약 「취업 공고 아침 보고」가 이 파일을 읽어서 한다.
@@ -43,6 +43,9 @@ def progress(site, done, total):
         with LOG.open("a") as f:
             f.write(f"{datetime.now():%F %T} 진행 · {site} 본문 {done}/{total}\n")
 
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # -I 로 돌면 스크립트 폴더가 경로에 없다
+import origins  # noqa: E402
 
 # 요청 사이 쉬는 시간은 고정값 대신 무작위(지터)로 준다. 사이트가 기계 요청으로 보고 막지 않게
 def get(url, data=None, headers=None):
@@ -100,6 +103,7 @@ def zighang(since, seen):
         progress("직행", done, len(found))
         try:
             detail = get(f"https://api.zighang.com/api/recruitments/{item['id']}")["data"]
+            item["origin"] = origins.normalize(detail.get("redirectUrl"))
             item["body"] = doc_text(detail.get("summary"))[:3000]
         except Exception as error:
             item["body"] = f"(본문을 못 가져옴: {error})"
@@ -181,6 +185,56 @@ def jasoseol(since, seen):
     return found
 
 
+def wanted(since, seen):
+    """원티드: 개발(518) 전체에서 경력 0~1년을 받는 공고. 직행이 원티드를 3분의 1쯤만 긁어 와서 따로 모은다.
+    목록에 올린 날이 없어서, 최신순으로 넘기다 한 쪽이 전부 본 공고면 멈춘다. 첫 실행(--backfill)은 끝까지 넘긴다."""
+    found = {}
+    for offset in range(0, 3000, 100):
+        query = "country=kr&tag_type_ids=518&job_sort=job.latest_order&years=0&years=1&locations=all&limit=100&offset=" + str(offset)
+        jobs = get(f"https://www.wanted.co.kr/api/v4/jobs?{query}")["data"]
+        fresh = 0
+        for j in jobs:
+            key = f"wanted:{j['id']}"
+            if key in seen or key in found:
+                continue
+            fresh += 1
+            if (j.get("annual_from") or 0) > MAX_CAREER_MIN or (j.get("address") or {}).get("country") not in (None, "한국"):
+                continue
+            found[key] = {
+                "key": key, "site": "원티드", "id": j["id"],
+                "company": j["company"]["name"], "title": j["position"],
+                "career": [j.get("annual_from"), j.get("annual_to")],
+                "end": (j.get("due_time") or "")[:10] or "상시",
+                "regions": [(j.get("address") or {}).get("location") or "-"],
+                "categories": ["개발"],
+                "url": f"https://www.wanted.co.kr/wd/{j['id']}",
+            }
+        if len(jobs) < 100 or (not fresh and not BACKFILL):
+            break
+        time.sleep(random.uniform(0.5, 1.5))
+    for done, item in enumerate(found.values(), 1):
+        progress("원티드", done, len(found))
+        try:
+            detail = get(f"https://www.wanted.co.kr/api/v4/jobs/{item['id']}")["job"]["detail"]
+            item["body"] = "\n\n".join(f"## {name}\n{detail[k]}" for k, name in (
+                ("intro", "회사 · 포지션 소개"), ("main_tasks", "주요 업무"), ("requirements", "자격 요건"),
+                ("preferred_points", "우대 사항"), ("benefits", "혜택 · 복지")) if detail.get(k))[:3000]
+        except Exception as error:
+            item["body"] = f"(본문을 못 가져옴: {error})"
+        time.sleep(random.uniform(1.0, 2.5))
+    return list(found.values())
+
+
+def add_origin(item):
+    """원래 공고 주소(origins.py). 직행은 상세를 받을 때 이미 붙였다. 자소설은 공고 페이지를 한 번 더 연다."""
+    if item.get("origin"):
+        return
+    try:
+        item["origin"] = origins.origin_of(item) if item["site"] == "자소설" else origins.normalize(item["url"])
+    except Exception:
+        item["origin"] = None
+
+
 def company_key(name):
     """회사 보고서 파일 이름 · 조사 캐시 키 · 노트 링크가 함께 쓰는 회사 이름. 법인 표기와 괄호를 뺀다."""
     name = re.sub(r"\([^)]*\)|（[^）]*）|\[[^\]]*\]|주식회사|㈜", "", name)
@@ -214,7 +268,7 @@ def main():
         lookup = {k: v for k, v in seen.items() if v != "old"}  # 점핏이 「오래돼서 넘김」으로 적어 둔 공고도 다시 본다
 
     items, errors = [], []
-    for name, fetch in (("직행", zighang), ("점핏", jumpit), ("자소설", jasoseol)):
+    for name, fetch in (("직행", zighang), ("점핏", jumpit), ("자소설", jasoseol), ("원티드", wanted)):
         try:
             items += fetch(since, lookup)
         except Exception as error:
@@ -222,7 +276,15 @@ def main():
 
     unique, titles = {}, list(seen.get("_titles", []))
     known = set(titles)
+    known_origins = origins.load()
+    origin_posts = origins.postings()
+    origin_set = set().union(*(origins.keys(o, (origin_posts.get(u) or {}).get("company_key", "")) for u, o in known_origins.items()))
     for item in items:
+        add_origin(item)
+        item["company_key"] = company_key(item["company"])
+        if origins.keys(item.get("origin"), item["company_key"]) & origin_set:
+            seen[item["key"]] = report_day()  # 원래 공고가 같은 공고를 다른 사이트에서 이미 받았다
+            continue
         item["company_key"] = company_key(item["company"])
         if BACKFILL:
             item["backfill"] = True
@@ -233,6 +295,9 @@ def main():
         known.add(signature)
         titles.append(signature)
         unique[item["key"]] = item
+        if item.get("origin"):
+            origin_set |= origins.keys(item["origin"], item["company_key"])
+            known_origins[item["url"]] = item["origin"]
 
     today = report_day()
     out = DATA / "new" / f"{today}.json"
@@ -246,8 +311,9 @@ def main():
     seen["_titles"] = titles[-20000:]  # 오래된 것부터 버린다
     seen["_last_run"] = NOW.isoformat(timespec="minutes")
     SEEN.write_text(json.dumps(seen, ensure_ascii=False))
+    origins.save(known_origins)
     print(f"새 공고 {len(unique)}건 → {out}" + (f" · 오류 {errors}" if errors else ""))
-    return 1 if len(errors) == 3 else 0
+    return 1 if len(errors) == 4 else 0
 
 
 if __name__ == "__main__":

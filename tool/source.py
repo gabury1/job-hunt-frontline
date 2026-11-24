@@ -148,6 +148,20 @@ def jasoseol(pid, out):
     return lines, images[:MAX_IMAGES * 3]
 
 
+def wanted(pid, out):
+    d = json.loads(get(f"https://www.wanted.co.kr/api/v4/jobs/{pid}"))["job"]
+    detail, address = d.get("detail") or {}, d.get("address") or {}
+    lines = [f"- 제목: {d['position']}", f"- 회사: {d['company']['name']}", f"- 마감: {d.get('due_time') or '상시'}",
+             f"- 요구 경력: {d.get('annual_from')} ~ {d.get('annual_to')}년(100 은 상한 없음)",
+             f"- 근무지: {address.get('full_location') or address.get('location') or '-'}",
+             f"- 기술 스택: {', '.join(t.get('title', '') for t in d.get('skill_tags') or [])}"]
+    for key, name in (("intro", "회사 · 포지션 소개"), ("main_tasks", "주요 업무"), ("requirements", "자격 요건"),
+                      ("preferred_points", "우대 사항"), ("benefits", "혜택 · 복지"), ("hire_rounds", "채용 전형")):
+        if detail.get(key):
+            lines += ["", f"## {name}", "", detail[key]]
+    return lines, []
+
+
 def main():
     if len(sys.argv) < 3:
         raise SystemExit(__doc__)
@@ -160,6 +174,8 @@ def main():
         lines, images = zighang(pid, out)
     elif "jumpit" in url:
         lines, images = jumpit(pid, out)
+    elif "wanted.co.kr" in url:
+        lines, images = wanted(pid, out)
     elif "jasoseol.com" in url:
         lines, images = jasoseol(pid, out)
     else:

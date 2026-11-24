@@ -7,7 +7,7 @@
 
 | 시각 | 스크립트 | 하는 일 |
 |---|---|---|
-| 06:00 | `run.sh` → `collect.py` · `prefilter.py` | 직행 · 점핏 · 자소설닷컴 공개 API 에서 새 공고를 모으고(요청마다 무작위로 쉰다), SI · 파견 같은 확실한 것만 글로 거른다 |
+| 06:00 | `run.sh` → `collect.py` · `prefilter.py` | 직행 · 점핏 · 자소설닷컴 · 원티드 공개 API 에서 새 공고를 모으고(요청마다 무작위로 쉰다), SI · 파견 같은 확실한 것만 글로 거른다 |
 | 06:10 | `research.sh --from candidates` → `research.py` | 회사마다 헤드리스 `claude -p` 하나가 웹 검색 · DART(`dart.py`) · 공개 페이지(`fetch.py`)로 조사 보고서를 쓴다. 지시문은 `research-prompt.md` |
 | 08:00 | (판정 봇) | 지원자의 기준 문서(지원 대상 · 지원 직무 표)와 회사 보고서로 공고를 남기고 뺀다. 원래는 개인 비서 봇이 했다. `backfill.py` 의 판정 지시문을 대신 써도 된다 |
 | 08:20 | `research.sh --from kept` → `research.py` · `posting.py` · `status.py` | 남은 회사 조사, 공고마다 노트(`source.py` 가 원문 글 · 이미지를 모으고 `posting-prompt.md` 대로 정리), 접수 중 공고 표. 그다음 개인 내용을 걷어 낸 사본을 이 레포에 올린다 |
