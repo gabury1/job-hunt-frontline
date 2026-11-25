@@ -182,7 +182,7 @@ def src_dir(url):
 
 
 def find_item(url):
-    for path in sorted((DATA / "kept").glob("*.json")):
+    for path in sorted(p for d in ("kept", "kept-public") for p in (DATA / d).glob("*.json")):
         for item in load(path, {"items": []})["items"]:
             if item["url"] == url:
                 return item
@@ -208,7 +208,7 @@ def apply_staged():
     index = load(INDEX, {})
     used = {v["file"] for v in index.values()} | {p.stem for p in NOTES.glob("*.md")}
     kept = {}
-    for path in sorted((DATA / "kept").glob("*.json")):
+    for path in sorted(p for d in ("kept", "kept-public") for p in (DATA / d).glob("*.json")):
         for item in load(path, {"items": []})["items"]:
             kept[src_dir(item["url"]).name] = item
     moved, bad = 0, []
@@ -245,7 +245,7 @@ def main():
     limit = next((int(args[i + 1]) for i, a in enumerate(args) if a == "--limit"), None)
     force = "--force" in args
 
-    paths = sorted((DATA / "kept").glob("*.json")) if "--all" in args else [DATA / "kept" / f"{today}.json"]
+    paths = sorted(p for d in ("kept", "kept-public") for p in (DATA / d).glob("*.json")) if "--all" in args else [p for p in (DATA / "kept" / f"{today}.json", DATA / "kept-public" / f"{today}.json") if p.exists()]
     kept = {}
     for path in paths:
         for item in load(path, {"items": []})["items"]:

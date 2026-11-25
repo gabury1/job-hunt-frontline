@@ -45,10 +45,11 @@ def postings():
     return found
 
 
-def judged():
-    """url → 판정. 같은 공고가 여러 날 판정됐으면 나중 판정을 쓴다."""
+def judged(dirs=("kept",)):
+    """url → 판정. 같은 공고가 여러 날 판정됐으면 나중 판정을 쓴다.
+    kept 는 지원자 기준(판정 봇 판정), kept-public 은 공개판에만 더하는 판정(public_judge.py)이다."""
     found = {}
-    for path in sorted((DATA / "kept").glob("*.json")):
+    for path in sorted(p for d in dirs for p in (DATA / d).glob("*.json")):
         for item in load(path, {"items": []})["items"]:
             found[item["url"]] = item
     return found
@@ -132,9 +133,9 @@ def table(head, rows):
     return lines
 
 
-def open_rows(check):
-    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 2년 이상 · 다른 사이트 중복). share.py 도 이걸 쓴다."""
-    posts, kept = postings(), judged()
+def open_rows(check, public=False):
+    """지금 접수 중인 공고 줄과 뺀 건수(마감 지남 · 상시 종료 · 2년 이상 · 다른 사이트 중복). share.py 도 이걸 쓴다(public=True: 공개판 판정까지)."""
+    posts, kept = postings(), judged(("kept", "kept-public") if public else ("kept",))
     checks = load(CHECKS, {})
     rows, expired, closed, too_senior = [], 0, 0, 0
     for url, judge in kept.items():

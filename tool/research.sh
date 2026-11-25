@@ -30,6 +30,15 @@ else
   echo "$(date '+%F %T') 실패 (exit $code, $*)"
 fi
 if (( kept )); then
+  # 공개판 추가 판정(지원자 기준에서 빠진 것 중 프론트엔드 · 풀스택 · 공공기관 · 비IT 사내 IT)과 그 회사 조사. 지원자 보고에는 섞이지 않는다
+  day=$(printf '%s\n' "$@" | grep -m1 -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || date +%F)
+  if out=$(/usr/bin/python3 -I "$DIR/public_judge.py" "$day" 2>&1); then
+    echo "$(date '+%F %T') 성공 (공개판 판정) · $out"
+    [[ -f /opt/jobfeed/store/data/kept-public/$day.json ]] && \
+      flock -w 5400 "$LOCK" /usr/bin/python3 -I "$DIR/research.py" "$day" --from kept-public && echo "$(date '+%F %T') 성공 (공개판 회사 조사)"
+  else
+    echo "$(date '+%F %T') 실패 (공개판 판정, exit $?) · $out"
+  fi
   # 판정에 남은 공고마다 공고 보고서(취업최전선/공고/)를 만든다. 날짜 인자가 있으면 그날 것을 만든다
   day=$(printf '%s\n' "$@" | grep -m1 -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' || date +%F)
   if /usr/bin/python3 -I "$DIR/posting.py" "$day"; then
