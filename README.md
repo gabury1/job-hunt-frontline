@@ -2,6 +2,8 @@
 
 개발자 신입 채용 공고 정제본
 
+<img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="360">
+
 지금 접수 중인 국내 개발 신입 · 주니어 공고를 매일 아침 모아, **AI 에 그대로 먹이기 좋게** 정리한 마크다운입니다.
 
 > **AI 에게는 [AGENTS.md](AGENTS.md) 하나만 주면 됩니다.** ChatGPT · Claude 같은 웹 채팅이라면 아래 주소를 붙이고
