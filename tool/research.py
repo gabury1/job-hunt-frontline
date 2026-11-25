@@ -182,7 +182,7 @@ def research(key, items, postings, today):
     cmd = [CLAUDE, "-p", "--output-format", "json", "--model", MODEL,
            "--strict-mcp-config", "--settings", json.dumps({"disableAllHooks": True}),
            "--tools", "WebSearch,WebFetch,Bash",
-           "--allowedTools", f"WebSearch,WebFetch,Bash(python3 -I {HERE}/dart.py:*),Bash(python3 -I {HERE}/fetch.py:*)"]
+           "--allowedTools", f"WebSearch,WebFetch,Bash(python3 -I {HERE}/dart.py:*),Bash(python3 -I {HERE}/fetch.py:*),Bash(python3 -I {HERE}/nps.py:*)"]
     started = time.time()
     proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=TIMEOUT, cwd=STORE, env=env)
     elapsed = time.time() - started
