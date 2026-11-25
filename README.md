@@ -13,7 +13,7 @@
 
 지금 접수 중인 국내 개발 신입 · 주니어 공고를 매일 아침 모아, **AI 에 그대로 먹이기 좋게** 정리한 마크다운입니다.
 
-<p align="center"><img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="380"></p>
+<p align="center"><img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="560"></p>
 
 ## 바로 쓰기
 
