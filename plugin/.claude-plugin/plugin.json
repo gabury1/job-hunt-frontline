@@ -1,0 +1,9 @@
+{
+  "name": "job-hunt",
+  "version": "0.1.0",
+  "description": "국내 개발 신입 · 주니어 채용 공고 정제본(매일 아침 갱신)으로 공고를 고르고 지원을 준비한다",
+  "homepage": "https://github.com/gabury1/newbie-job-hunt",
+  "author": {
+    "name": "gabury1"
+  }
+}

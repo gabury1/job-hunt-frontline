@@ -10,6 +10,8 @@
 > 「여기서 내 조건에 맞는 공고 골라 줘」라고 하세요. Codex · Cursor · Claude Code 는 레포를 열면 알아서 읽습니다.
 >
 > `https://raw.githubusercontent.com/gabury1/newbie-job-hunt/main/AGENTS.md`
+>
+> Claude Code 라면 스킬로 설치해도 됩니다: `/plugin marketplace add gabury1/newbie-job-hunt` → `/plugin install job-hunt@newbie-job-hunt` 뒤 「공고 골라 줘」.
 
 원문은 각 채용 사이트에 흩어져 있고 이미지로만 올라온 공고도 많아서, 공고마다 일정 · 전형 · 담당 업무 · 지원 자격 · 제출 서류를 같은 틀로 다시 적었습니다.
 

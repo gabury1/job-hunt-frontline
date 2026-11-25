@@ -1,0 +1,14 @@
+{
+  "name": "newbie-job-hunt",
+  "owner": {
+    "name": "gabury1"
+  },
+  "description": "개발 신입 · 주니어 채용 공고 정제본을 AI 로 쓰는 스킬",
+  "plugins": [
+    {
+      "name": "job-hunt",
+      "source": "./plugin",
+      "description": "국내 개발 신입 · 주니어 채용 공고 정제본(매일 아침 갱신)으로 공고를 고르고 지원을 준비한다"
+    }
+  ]
+}
