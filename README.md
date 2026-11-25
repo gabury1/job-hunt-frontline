@@ -23,10 +23,15 @@ AI 에게 아래 주소 하나만 주고 「내 조건에 맞는 공고 골라 �
 https://raw.githubusercontent.com/gabury1/newbie-job-hunt/main/AGENTS.md
 ```
 
+매일 아침 새 공고를 확인하려면 스킬로 설치하세요. Claude Code · Codex · Cursor 등에 한 번에 깔리고(Node 22 이상), 「오늘 올라온 공고 보여 줘」 한마디로 새 공고만 확인합니다.
+
+```
+npx skills add gabury1/newbie-job-hunt
+```
+
 | 쓰는 곳 | 하는 법 |
 |---|---|
 | **Claude Code · Codex · Cursor** | 위 주소를 주거나, 레포를 열면 알아서 읽습니다 |
-| **매일 아침 새 공고 확인은 스킬로** | `npx skills add gabury1/newbie-job-hunt` 한 줄이면 Claude Code · Codex · Cursor 등에 job-hunt 스킬이 깔립니다(Node 22 이상)<br>설치해 두면 매일 아침 「오늘 올라온 공고 보여 줘」 한마디로 새 공고만 확인합니다 |
 | **ChatGPT · Claude 웹 채팅** | 위 주소를 붙여 넣으세요 |
 
 ## 무엇이 들어 있나
