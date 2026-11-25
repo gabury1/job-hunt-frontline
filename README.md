@@ -1,22 +1,46 @@
+<div align="center">
+
 # 취업최전선
 
-개발자 신입 채용 공고 정제본
+**개발자 신입 · 주니어 채용 공고, 매일 아침 껍질을 까서 배달합니다**
 
-<img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="360">
+![갱신](https://img.shields.io/badge/%EB%A7%88%EC%A7%80%EB%A7%89_%EA%B0%B1%EC%8B%A0-2026--11--25-2ea44f)
+![공고](https://img.shields.io/badge/%EC%A0%91%EC%88%98_%EC%A4%91_%EA%B3%B5%EA%B3%A0-410%EA%B1%B4-1f6feb)
+![회사](https://img.shields.io/badge/%ED%9A%8C%EC%82%AC_%EB%85%B8%ED%8A%B8-295%EA%B3%B3-8250df)
+![Stars](https://img.shields.io/github/stars/gabury1/newbie-job-hunt?style=flat&label=Stars&color=f2cc60)
+
+</div>
 
 지금 접수 중인 국내 개발 신입 · 주니어 공고를 매일 아침 모아, **AI 에 그대로 먹이기 좋게** 정리한 마크다운입니다.
 
-> **AI 에게는 [AGENTS.md](AGENTS.md) 하나만 주면 됩니다.** ChatGPT · Claude 같은 웹 채팅이라면 아래 주소를 붙이고
-> 「여기서 내 조건에 맞는 공고 골라 줘」라고 하세요. Codex · Cursor · Claude Code 는 레포를 열면 알아서 읽습니다.
->
-> `https://raw.githubusercontent.com/gabury1/newbie-job-hunt/main/AGENTS.md`
->
-> Claude Code 라면 스킬로 설치해도 됩니다: `/plugin marketplace add gabury1/newbie-job-hunt` → `/plugin install job-hunt@newbie-job-hunt` 뒤 「공고 골라 줘」.
+<p align="center"><img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="380"></p>
 
-원문은 각 채용 사이트에 흩어져 있고 이미지로만 올라온 공고도 많아서, 공고마다 일정 · 전형 · 담당 업무 · 지원 자격 · 제출 서류를 같은 틀로 다시 적었습니다.
+## 바로 쓰기
+
+AI 에게 아래 주소 하나만 주고 「내 조건에 맞는 공고 골라 줘」라고 하세요.
+
+```
+https://raw.githubusercontent.com/gabury1/newbie-job-hunt/main/AGENTS.md
+```
+
+| 쓰는 곳 | 하는 법 |
+|---|---|
+| **Claude Code · Codex · Cursor** | 위 주소를 주거나, 레포를 열면 알아서 읽습니다 |
+| **매일 쓸 거라면 스킬로** | Claude Code: `/plugin marketplace add gabury1/newbie-job-hunt` → `/plugin install job-hunt@newbie-job-hunt`<br>Codex: `codex plugin marketplace add gabury1/newbie-job-hunt` → `codex plugin add job-hunt@newbie-job-hunt`<br>설치하면 주소 없이 「공고 골라 줘」 한마디로 됩니다 |
+| **ChatGPT · Claude 웹 채팅** | 위 주소를 붙여 넣으세요 |
+
+## 무엇이 들어 있나
+
+| | |
+|---|---|
+| **공고 410건** | 공고마다 일정 · 전형 · 담당 업무 · 지원 자격 · 제출 서류를 같은 틀로 다시 정리(이미지로만 올라온 공고 포함) |
+| **회사 295곳** | 매출(전자공시) · 인원과 1년 증감(국민연금) · 블라인드 점수와 리뷰 요약 · 최근 이슈(뉴스) · 투자 단계 |
+| **오늘의 공고** | 매일 아침 새로 올라온 공고만 따로 모은 `오늘의 공고.md` |
+| **AI 이정표** | `postings.jsonl` 한 줄에 공고 하나. 노트 경로와 회사 숫자가 붙어 있어 노트를 열기 전에 거를 수 있습니다 |
 
 - 갱신: 매일 아침(한국 시간 9~10시쯤). 마감된 공고는 빠집니다. 지난 공고는 git 기록에 남습니다.
 - 마지막 갱신: 2026-11-25 · 접수 중 공고 410건 · 회사 295곳
+- 도움이 됐다면 Star 를, 매일 갱신 소식을 받으려면 Watch 를 눌러 주세요.
 
 ## 크롤링 기준
 
@@ -39,7 +63,7 @@
 |---|---|
 | `AGENTS.md` | AI 에게 주는 안내: 파일 구조 · 고르는 순서 · 지킬 것 |
 | `.claude/skills/job-hunt/` | 스킬 하나: 공고 고르기 · 지원 준비 · 회사 비교 · 마감 정리 · 내 기준으로 직접 돌리기 |
-| `postings.jsonl` | 공고 한 줄에 하나. 회사 · 제목 · 카테고리 · 직무 · 요구 경력 · 마감 · 올라온 날 · 원문 링크 · 노트 경로 · 큰 회사인지(`big_company`) · 오늘 새 공고인지(`new_today`). **AI 에는 이 파일부터 주세요** |
+| `postings.jsonl` | 공고 한 줄에 하나. 회사 · 제목 · 카테고리 · 직무 · 요구 경력 · 마감 · 올라온 날 · 원문 링크 · 노트 경로 · 큰 회사인지(`big_company`) · 오늘 새 공고인지(`new_today`) · 회사 숫자(국민연금 인원 · 1년 증감 · 블라인드 평점 · 투자 단계). **AI 에는 이 파일부터 주세요** |
 | `오늘의 공고.md` | 그날 아침 새로 올라온 공고만 |
 | `공고 현황.md` | 접수 중 전체. 큰 회사 · 나머지(마감이 가까운 순서) · 상시 채용 세 칸 |
 | `postings/` | 공고마다 노트 한 장: 한눈에 · 일정과 전형 · 팀이 하는 일 · 담당할 업무 · 지원 자격 · 제출 서류와 지원 방법 · 유의사항 |
