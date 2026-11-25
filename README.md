@@ -1,19 +1,19 @@
 <div align="center">
 
-# 취업최전선
+# 껍질-미리깐 공고
 
 **개발자 신입 · 주니어 채용 공고, 매일 아침 껍질을 까서 배달합니다**
 
-![갱신](https://img.shields.io/badge/%EB%A7%88%EC%A7%80%EB%A7%89_%EA%B0%B1%EC%8B%A0-2026--11--25-2ea44f)
-![공고](https://img.shields.io/badge/%EC%A0%91%EC%88%98_%EC%A4%91_%EA%B3%B5%EA%B3%A0-410%EA%B1%B4-1f6feb)
-![회사](https://img.shields.io/badge/%ED%9A%8C%EC%82%AC_%EB%85%B8%ED%8A%B8-295%EA%B3%B3-8250df)
-![Stars](https://img.shields.io/github/stars/gabury1/newbie-job-hunt?style=flat&label=Stars&color=f2cc60)
+![갱신](https://img.shields.io/badge/%EB%A7%88%EC%A7%80%EB%A7%89_%EA%B0%B1%EC%8B%A0-2026--11--25-2ea44f?style=for-the-badge)
+![공고](https://img.shields.io/badge/%EC%A0%91%EC%88%98_%EC%A4%91_%EA%B3%B5%EA%B3%A0-410%EA%B1%B4-1f6feb?style=for-the-badge)
+![회사](https://img.shields.io/badge/%ED%9A%8C%EC%82%AC_%EB%85%B8%ED%8A%B8-295%EA%B3%B3-8250df?style=for-the-badge)
+![Stars](https://img.shields.io/github/stars/gabury1/newbie-job-hunt?style=for-the-badge&label=Stars&color=f2cc60)
 
 </div>
 
 지금 접수 중인 국내 개발 신입 · 주니어 공고를 매일 아침 모아, **AI 에 그대로 먹이기 좋게** 정리한 마크다운입니다.
 
-<p align="center"><img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="560"></p>
+<p align="center"><img src="assets/prepeeled.png" alt="껍질-미리깐 공고" width="380"></p>
 
 ## 바로 쓰기
 
