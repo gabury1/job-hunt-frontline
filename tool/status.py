@@ -182,6 +182,8 @@ def main():
     check = "--no-check" not in sys.argv
     reports = load(POSTINGS, {})
     rows, expired, closed, too_senior, dups = open_rows(check)
+    if check:  # 공개판에만 있는 상시 공고도 열려 있는지 확인해 둔다(share.py 는 확인 기록만 읽는다)
+        open_rows(True, public=True)
 
     dated = sorted((r for r in rows if r["end"] != "상시"), key=lambda r: (r["end"], r["company_key"]))
     always = sorted((r for r in rows if r["end"] == "상시"), key=lambda r: r["posted"], reverse=True)  # 최근에 올라온 것부터

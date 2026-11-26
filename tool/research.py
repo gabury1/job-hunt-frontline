@@ -34,7 +34,7 @@ REPORTS = Path("/opt/jobfeed/notes/기업")
 NOTE = Path("/opt/jobfeed/notes/오늘의 공고.md")
 EXPERIENCE = Path("/opt/jobfeed/notes/무기고/경험 은행/목록.md")
 CLAUDE = "claude"
-MODEL = "opus"  # 지원자: 소넷은 별로, 오푸스로(11-24)
+MODEL = "sonnet"  # 11-26 지원자: 토큰이 모자라 소넷으로(11-24 엔 「소넷은 별로」로 오푸스였다)
 WORKERS = 16  # 지원자: 16개까지 너끈하다(11-24). claude 하나가 수백 MB 라 메모리는 지켜본다
 TIMEOUT = 25 * 60
 RECHECK = timedelta(days=7)
