@@ -1,8 +1,9 @@
 """회사 조사 — 그날 공고의 회사마다 보고서를 만든다.
 
-아침 06:10 에는 사전 거르기 결과(candidates/<날짜>.json)의 회사를 조사하고(--from candidates),
-08:00 판정 봇 판정이 그 보고서를 근거로 카테고리 · 특기를 정한다. 08:20 에는 판정 봇이 남긴 kept/<날짜>.json 에서
-아직 보고서가 없는 회사만 이어서 조사하고(--from kept) 노트의 「조사 중」 칸을 채운다.
+아침 06:10 에는 사전 거르기 결과(candidates/<날짜>.json)에서 보고서가 없는 회사만 기본 사실을 짧게 확인한다
+(--from candidates --light, data/light/<회사>.json). 08:00 판정 봇 판정이 그 사실(보고서가 있으면 보고서)로 카테고리 · 특기를 정한다.
+08:20 에는 판정에 남은 회사(kept · kept-public)만 깊게 조사하고(--from kept) 노트의 「조사 중」 칸을 채운다.
+11-27 까지는 06:10 에 후보 회사 전부를 깊게 조사했는데, 판정에서 3분의 2가 떨어져 토큰이 그만큼 버려졌다.
 
 회사마다 헤드리스 claude -p 하나를 띄워 웹 검색 · 웹 읽기 · DART(dart.py)로 조사하게 하고,
 그 마지막 응답(보고서 마크다운)을 옵시디언 취업최전선/기업/<회사>.md 에 쓴다.
@@ -39,6 +40,8 @@ WORKERS = 16  # 지원자: 16개까지 너끈하다(11-24). claude 하나가 수
 TIMEOUT = 25 * 60
 RECHECK = timedelta(days=7)
 REQUIRED = ("researched", "summary", "business", "employees", "founded", "stage", "profit")  # 판정 봇 판정이 읽는 frontmatter
+LIGHT = DATA / "light"  # 06:10 짧은 확인 결과. facts.py 가 보고서가 없을 때 읽는다
+LIGHT_TURNS = 10
 SKIP_CATEGORIES = {"헤드헌팅"}  # 회사 이름을 숨긴 대행 공고라 조사할 회사가 없다
 
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36"
@@ -197,6 +200,44 @@ def research(key, items, postings, today):
     return elapsed, result.get("total_cost_usd"), result.get("num_turns"), result.get("usage") or {}
 
 
+LIGHT_PROMPT = """채용 공고를 낸 회사 「«NAME»」의 기본 사실만 짧게 확인한다. 아침 판정이 이 회사가 어떤 종류의 회사인지
+(대기업 계열사 · 상장사 · 투자 단계 · 공공기관 · SI · SM · 파견 · 자체 제품 회사 등) 가르는 데 쓴다. 깊은 조사(재무 · 리뷰 · 이슈)는 하지 않는다.
+
+- 인원: `python3 -I «HERE»/nps.py info <회사 이름>` 으로 국민연금 가입자 수를 먼저 본다. 안 나오면 웹 검색으로 찾는다.
+- 하는 일 · 설립 연도 · 회사 단계: 웹 검색 몇 번 안에서 확인한다. 회사 소개 페이지나 기사 하나를 열어 보는 정도까지만 한다.
+- 지어내지 않는다. 확인하지 못한 칸은 빈 문자열로 둔다. 공고 글만 보고 짐작한 것은 적지 않는다.
+
+이 회사가 낸 공고:
+«POSTINGS»
+
+다른 말 없이 JSON 하나만 낸다: {"business": 하는 일, "employees": 인원과 그 기준, "founded": 설립 연도, "stage": 회사 단계와 계열 · 상장 · 투자 · SI 성격}"""
+
+
+def light(key, items, postings, today):
+    """판정 전 짧은 확인 — 보고서 없이 판정에 쓸 사실 넷만 data/light/<회사>.json 에 쓴다."""
+    prompt = (LIGHT_PROMPT.replace("«NAME»", " · ".join(sorted({i.get("company", key) for i in items})))
+              .replace("«HERE»", str(HERE)).replace("«POSTINGS»", posting_text(items, postings)))
+    env = {**os.environ, "CLAUDE_CODE_DISABLE_CLAUDE_MDS": "1", "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
+    cmd = [CLAUDE, "-p", "--output-format", "json", "--model", MODEL, "--max-turns", str(LIGHT_TURNS),
+           "--strict-mcp-config", "--settings", json.dumps({"disableAllHooks": True}),
+           "--tools", "WebSearch,WebFetch,Bash", "--allowedTools", f"WebSearch,WebFetch,Bash(python3 -I {HERE}/nps.py:*)"]
+    started = time.time()
+    proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=10 * 60, cwd=STORE, env=env)
+    elapsed = time.time() - started
+    try:
+        result = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"claude 출력이 JSON 이 아님 (exit {proc.returncode}): {proc.stderr[-300:] or proc.stdout[-300:]}")
+    if result.get("is_error"):
+        raise RuntimeError(f"claude 오류({result.get('subtype')}): {str(result.get('result'))[:300]}")
+    text = result.get("result", "")
+    body, _ = json.JSONDecoder().raw_decode(text[text.find("{"):])
+    fact = {k: str(body.get(k) or "").strip() for k in ("business", "employees", "founded", "stage")}
+    LIGHT.mkdir(parents=True, exist_ok=True)
+    (LIGHT / f"{key}.json").write_text(json.dumps(fact | {"checked": today}, ensure_ascii=False, indent=1))
+    return elapsed, result.get("total_cost_usd"), result.get("num_turns"), result.get("usage") or {}
+
+
 def summary_of(key):
     report = REPORTS / f"{key}.md"
     if not report.exists():
@@ -304,6 +345,7 @@ def main():
     source = next((args[i + 1] for i, a in enumerate(args) if a == "--from"), "kept")
     stop_at = next((args[i + 1] for i, a in enumerate(args) if a == "--stop-new-at"), None)
     wait = next((int(args[i + 1]) for i, a in enumerate(args) if a == "--wait"), 0)
+    is_light = "--light" in args
 
     kept_path = DATA / source / f"{today}.json"
     deadline = time.time() + wait * 60
@@ -320,12 +362,19 @@ def main():
     subprocess.run(["/usr/bin/python3", "-I", str(HERE / "dart.py"), "update"], check=False, capture_output=True)
     cache = load_cache()
     targets, skipped = pick_targets(kept, cache, force)
+    if is_light:  # 보고서(오래된 것 포함)나 짧은 확인이 이미 있으면 판정에 쓸 사실이 있다
+        have = {k for k in targets if (REPORTS / f"{k}.md").exists() or (LIGHT / f"{k}.json").exists()}
+        skipped += sorted(have)
+        targets = {k: v for k, v in targets.items() if k not in have}
     total = len(targets) + len(skipped)
     if only:
         targets = {k: v for k, v in targets.items() if k in only}
     if limit is not None:
         targets = dict(list(targets.items())[:limit])
-    log(f"시작({source}) · 회사 {total}곳(헤드헌팅 뺌) · 조사 {len(targets)} · 7일 안에 조사해 건너뜀 {len(skipped)}")
+    if is_light:
+        log(f"시작({source}, 짧은 확인) · 회사 {total}곳(헤드헌팅 뺌) · 확인 {len(targets)} · 보고서나 확인이 있어 건너뜀 {len(skipped)}")
+    else:
+        log(f"시작({source}) · 회사 {total}곳(헤드헌팅 뺌) · 조사 {len(targets)} · 7일 안에 조사해 건너뜀 {len(skipped)}")
 
     ok, failed, late = [], [], []
     tokens = Counter()
@@ -335,10 +384,17 @@ def main():
             late.append(key)  # 판정 전에 못 끝낼 회사는 시작하지 않는다. 08:20 실행이 이어서 한다
             return
         try:
-            elapsed, cost, turns, usage = research(key, targets[key], postings, today)
+            elapsed, cost, turns, usage = (light if is_light else research)(key, targets[key], postings, today)
         except Exception as error:
             failed.append(key)
             log(f"실패 · {key} · {str(error)[:300]}")
+            return
+        if is_light:  # 조사 캐시에는 안 적는다. 08:20 깊은 조사가 이 회사를 건너뛰면 안 된다
+            with lock:
+                tokens.update({k: usage.get(k, 0) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")})
+                tokens["cost_milli"] += round((cost or 0) * 1000)
+            ok.append(key)
+            log(f"성공(짧은 확인) · {key} · {elapsed:.0f}초 · {turns}턴 · ${cost or 0:.2f}")
             return
         with lock:
             cache[key] = {"last_research": datetime.now().isoformat(timespec="minutes"),

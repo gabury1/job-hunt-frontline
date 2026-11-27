@@ -3,7 +3,7 @@
     python3 -I facts.py [날짜] [시작 번호] [개수]
 
 candidates/<날짜>.json 의 회사마다: company_key · 보고서 유무 · business · employees · founded · stage · profit · summary(평가 한 줄).
-보고서가 없거나 그 값이 없으면 「조사 중」으로 낸다.
+보고서가 없으면 06:10 짧은 확인(data/light/<회사>.json)의 사실 넷(하는 일 · 임직원 · 설립 · 단계)을 낸다. 그것도 없으면 「조사 중」.
 """
 import json
 import sys
@@ -20,7 +20,11 @@ FIELDS = ("business", "employees", "founded", "stage", "profit", "summary")
 def facts(key):
     report = REPORTS / f"{key}.md"
     if not report.exists():
-        return None
+        light = DATA / "light" / f"{key}.json"
+        if not light.exists():
+            return None
+        fact = json.loads(light.read_text())
+        return {f: str(fact.get(f) or "").strip() for f in FIELDS} | {"researched": "", "light": fact.get("checked", "")}
     parts = report.read_text().split("---", 2)
     try:
         meta = yaml.safe_load(parts[1]) if len(parts) == 3 else {}
@@ -39,6 +43,10 @@ def main():
     print(f"회사 {len(keys)}곳 중 {start}~{min(start + count, len(keys)) - 1}번")
     for n, key in enumerate(keys[start:start + count], start):
         f = facts(key)
+        if f and f.get("light"):
+            print(f"[{n}] {key} · 보고서: 없음, 짧은 확인만({f['light']}) · 하는 일: {f['business'] or '-'} · 임직원: {f['employees'] or '-'} · "
+                  f"설립: {f['founded'] or '-'} · 단계: {f['stage'] or '-'}")
+            continue
         if not f or not f["summary"]:
             print(f"[{n}] {key} · 보고서: 조사 중")
             continue
